@@ -8,3 +8,4 @@
 ## Contributor expectations
 - Prefer documenting large artifacts (ISOs/images) as external release assets, not regular git objects.
 - When updating build plans or docs, reflect the Mint remaster approach and LFS-based artifact handling.
+- Binary files are **not supported** in this repository; never attempt to add a binary file to git history.

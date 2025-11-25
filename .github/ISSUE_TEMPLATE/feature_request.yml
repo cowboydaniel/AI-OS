@@ -1,0 +1,60 @@
+name: "Feature request"
+description: "Suggest an enhancement to the AI Desktop Shell, remaster flow, or tooling"
+labels: ["type:feature", "status:triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Share context so we can prioritize the idea within the roadmap phases.
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: A short title for the feature.
+      placeholder: "Add checksum generation to Mint remaster script"
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or goal
+      description: What user need does this feature solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Outline the approach, affected directories, and dependencies.
+      placeholder: |
+        - Add post-build checksum step in build/iso
+        - Store outputs under artifacts/checksums/
+        - Document usage in README
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Roadmap phase
+      description: Which phase does this align with?
+      options:
+        - Phase 1: Project Setup
+        - Phase 2: ISO Remaster Skeleton
+        - Phase 3: Developer Bootstrap
+        - Phase 4: AI Desktop Shell Stub
+        - Phase 5: AI Core Foundations
+        - Phase 6: Service Layer
+        - Phase 7: Packaging Strategy
+        - Phase 8: ISO Build Automation
+        - Phase 9: CI/CD Integration
+        - Phase 10: Release Readiness
+    validations:
+      required: true
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context

@@ -1,0 +1,58 @@
+name: "Bug report"
+description: "Report a reproducible problem in AetherOS build scripts, docs, or tooling"
+labels: ["type:bug", "status:triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug! Please include details so we can reproduce it on a Mint-based remaster environment.
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: A short, descriptive title of the issue.
+      placeholder: "ISO repack script fails on Mint 21.3"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List each command or action used to hit the problem.
+      placeholder: |
+        1. Run scripts/bootstrap-dev.sh
+        2. Execute build/iso/repack.sh
+        3. Observe error about missing squashfs-tools
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: "Linux Mint 21.3, git 2.44, git-lfs 3.4"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs and screenshots
+      description: Paste console output or attach screenshots if applicable. Please redact secrets.
+  - type: checkboxes
+    id: lfs
+    attributes:
+      label: Git LFS validation
+      options:
+        - label: I confirmed the issue is not caused by missing Git LFS installation
+          required: false

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AetherOS Shell</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="desktop">
+    <header class="top-bar">
+      <div class="brand">AetherOS</div>
+      <div class="status">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span class="status-label">Shell preview</span>
+      </div>
+    </header>
+
+    <nav class="side-nav" aria-label="Primary">
+      <button class="nav-item active" data-section="overview">Overview</button>
+      <button class="nav-item" data-section="workspace">Workspace</button>
+      <button class="nav-item" data-section="settings">Settings</button>
+    </nav>
+
+    <main class="workspace" role="main">
+      <section class="wallpaper" aria-label="Wallpaper">
+        <div class="terminal" aria-label="Terminal mock">
+          <div class="terminal-header">
+            <span class="dot dot-red" aria-hidden="true"></span>
+            <span class="dot dot-yellow" aria-hidden="true"></span>
+            <span class="dot dot-green" aria-hidden="true"></span>
+            <span class="terminal-title">mint-shell@aether:~</span>
+          </div>
+          <div class="terminal-body" id="terminal-body" aria-live="polite">
+            <div class="line"><span class="prompt">aether@mint ➜</span> welcome to the AI shell preview</div>
+            <div class="line"><span class="prompt">aether@mint ➜</span> run `init` to connect services</div>
+            <div class="line"><span class="prompt">aether@mint ➜</span> browse spaces from the navigation</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="content" id="content" aria-live="polite">
+        <h1>Desktop shell preview</h1>
+        <p>Use the navigation to explore the shell scaffold. The wallpaper hosts a lightweight terminal mock to hint at the AI-driven command layer.</p>
+        <ul>
+          <li><strong>Overview:</strong> Shell goals and current status.</li>
+          <li><strong>Workspace:</strong> Layout for apps, tiles, and assistant widgets.</li>
+          <li><strong>Settings:</strong> Theme controls and system info.</li>
+        </ul>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

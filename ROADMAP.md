@@ -8,11 +8,11 @@
 - [x] Document initial toolchain requirements
 
 ## Phase 2: ISO Remaster Skeleton
-- [ ] Create `build/iso/` scaffolding for Mint remaster
-- [ ] Add placeholder preseed/kickstart assets
-- [ ] Draft post-install branding hooks
-- [ ] Script unpack/repack flow for Mint ISO
-- [ ] Add checksum/signature generation stubs
+- [x] Create `build/iso/` scaffolding for Mint remaster
+- [x] Add placeholder preseed/kickstart assets
+- [x] Draft post-install branding hooks
+- [x] Script unpack/repack flow for Mint ISO
+- [x] Add checksum/signature generation stubs
 
 ## Phase 3: Developer Bootstrap
 - [ ] Implement `scripts/bootstrap-dev.sh`

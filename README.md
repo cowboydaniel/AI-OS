@@ -239,3 +239,23 @@ CLI-to-AI pipeline improvements
 License
 
 To be determined—final decision pending.
+
+---
+
+Repository Setup and ISO Distribution
+
+- Large artifacts such as installer ISOs are tracked with Git LFS. The `.gitattributes` file already marks `*.iso` and `artifacts/iso/*` for LFS handling.
+- Follow the step-by-step upload workflow in `docs/ISO_LFS_PLAN.md` before committing any ISO files.
+- Keep generated checksums in `artifacts/checksums/` so releases can be validated quickly.
+
+---
+
+Build Kickoff
+
+The initial build roadmap lives in `docs/BUILD_PLAN.md`. Highlights:
+
+- Repository layout for build scripts, packages, services, UI, and AI core components.
+- Bootstrapping tasks for developer setup, ISO remastering skeletons, and packaging decisions.
+- High-level ISO build flow and open questions to resolve before the first release candidate.
+
+These documents are the starting point for turning the AetherOS concept into a shippable ISO.

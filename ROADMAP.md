@@ -1,11 +1,11 @@
 # AetherOS Roadmap
 
 ## Phase 1: Project Setup
-- [ ] Define repository standards and contributor guidelines
-- [ ] Initialize base directory structure
-- [ ] Configure Git LFS for ISO artifacts
-- [ ] Establish issue templates and labels
-- [ ] Document initial toolchain requirements
+- [x] Define repository standards and contributor guidelines
+- [x] Initialize base directory structure
+- [x] Configure Git LFS for ISO artifacts
+- [x] Establish issue templates and labels
+- [x] Document initial toolchain requirements
 
 ## Phase 2: ISO Remaster Skeleton
 - [ ] Create `build/iso/` scaffolding for Mint remaster

@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Roadmap discussion
+    url: https://github.com/AetherOS-Org/AI-OS/discussions
+    about: Discuss roadmap alignment before proposing large changes.

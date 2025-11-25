@@ -15,11 +15,11 @@
 - [x] Add checksum/signature generation stubs
 
 ## Phase 3: Developer Bootstrap
-- [ ] Implement `scripts/bootstrap-dev.sh`
-- [ ] Automate installation of ISO build dependencies
-- [ ] Automate Git LFS setup and validation
-- [ ] Add environment validation checks
-- [ ] Document bootstrap usage and troubleshooting
+- [x] Implement `scripts/bootstrap-dev.sh`
+- [x] Automate installation of ISO build dependencies
+- [x] Automate Git LFS setup and validation
+- [x] Add environment validation checks
+- [x] Document bootstrap usage and troubleshooting
 
 ## Phase 4: AI Desktop Shell Stub
 - [ ] Create UI skeleton (HTML/CSS/JS)

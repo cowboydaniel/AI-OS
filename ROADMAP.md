@@ -22,11 +22,11 @@
 - [x] Document bootstrap usage and troubleshooting
 
 ## Phase 4: AI Desktop Shell Stub
-- [ ] Create UI skeleton (HTML/CSS/JS)
-- [ ] Implement wallpaper terminal mock
-- [ ] Wire minimal navigation/layout
-- [ ] Add basic styling aligned with Mint look
-- [ ] Document UI build/test steps
+- [x] Create UI skeleton (HTML/CSS/JS)
+- [x] Implement wallpaper terminal mock
+- [x] Wire minimal navigation/layout
+- [x] Add basic styling aligned with Mint look
+- [x] Document UI build/test steps
 
 ## Phase 5: AI Core Foundations
 - [ ] Define command translation interfaces

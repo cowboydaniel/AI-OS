@@ -29,11 +29,11 @@
 - [x] Document UI build/test steps
 
 ## Phase 5: AI Core Foundations
-- [ ] Define command translation interfaces
-- [ ] Add local model runner hooks/stubs
-- [ ] Outline executor sandboxing approach
-- [ ] Provide configuration defaults
-- [ ] Document telemetry and logging expectations
+- [x] Define command translation interfaces
+- [x] Add local model runner hooks/stubs
+- [x] Outline executor sandboxing approach
+- [x] Provide configuration defaults
+- [x] Document telemetry and logging expectations
 
 ## Phase 6: Service Layer
 - [ ] Draft systemd unit templates for AI core

@@ -11,7 +11,7 @@ jobs:
   download-and-upload:
     runs-on: ubuntu-22.04
     permissions:
-      contents: write
+      contents: read
     env:
       VERSION: "21.3"
       EDITION: "cinnamon"
@@ -24,40 +24,54 @@ jobs:
       - name: Set ISO paths
         run: |
           ISO_DIR="artifacts/iso/linuxmint-${{ env.VERSION }}-${{ env.EDITION }}"
+          ISO_EXTRACT_DIR="${ISO_DIR}/extracted"
           echo "ISO_DIR=${ISO_DIR}" >> "$GITHUB_ENV"
           echo "ISO_FILE=${ISO_DIR}/linuxmint.iso" >> "$GITHUB_ENV"
-
-      - name: Install extraction tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y p7zip-full
+          echo "ISO_EXTRACT_DIR=${ISO_EXTRACT_DIR}" >> "$GITHUB_ENV"
 
       - name: Download Linux Mint ISO
         run: |
-          rm -rf "${ISO_DIR}/extracted"
-          mkdir -p "${ISO_DIR}" "${ISO_DIR}/extracted"
+          rm -rf "${ISO_DIR}"
+          mkdir -p "${ISO_DIR}"
           ISO_URL="https://mirrors.edge.kernel.org/linuxmint/stable/${VERSION}/linuxmint-${VERSION}-${EDITION}-64bit.iso"
           echo "Downloading ${ISO_URL}"
           curl -L "$ISO_URL" -o "${ISO_FILE}"
 
+      - name: Record SHA256 checksum
+        run: |
+          CHECKSUM_FILE="${ISO_DIR}/linuxmint.sha256"
+          sha256sum "${ISO_FILE}" | tee "$CHECKSUM_FILE"
+
+          {
+            echo "## Linux Mint ${VERSION} ${EDITION} ISO"
+            echo "- Source: https://mirrors.edge.kernel.org/linuxmint/stable/${VERSION}/linuxmint-${VERSION}-${EDITION}-64bit.iso"
+            echo "- SHA256: $(cut -d' ' -f1 "$CHECKSUM_FILE")"
+            echo "- Stored locally at runtime only; not committed to git"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Extract ISO contents
         run: |
-          7z x -y "${ISO_FILE}" -o"${ISO_DIR}/extracted"
+          rm -rf "${ISO_EXTRACT_DIR}"
+          mkdir -p "${ISO_EXTRACT_DIR}"
+          bsdtar -C "${ISO_EXTRACT_DIR}" -xf "${ISO_FILE}"
+          tree -L 2 "${ISO_EXTRACT_DIR}" | sed 's/^/  /' >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Commit and push ISO updates
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Archive extracted contents
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git lfs install
+          tar -czf "${ISO_DIR}/linuxmint-extracted.tar.gz" -C "${ISO_EXTRACT_DIR}" .
 
-          git add "${ISO_FILE}" "${ISO_DIR}/extracted"
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linuxmint-${{ env.VERSION }}-${{ env.EDITION }}-artifacts
+          path: |
+            ${{ env.ISO_DIR }}/linuxmint.sha256
+            ${{ env.ISO_DIR }}/linuxmint-extracted.tar.gz
+          retention-days: 14
 
-          if git diff --cached --quiet; then
-            echo "No changes to commit."
-            exit 0
-          fi
-
-          git commit -m "chore: update Linux Mint ISO ${{ env.VERSION }} ${{ env.EDITION }}"
-          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" "HEAD:${{ github.ref_name }}"
+      - name: Clean up downloaded ISO
+        run: |
+          rm -f "${ISO_FILE}"
+          rm -rf "${ISO_EXTRACT_DIR}"
+          rm -f "${ISO_DIR}/linuxmint-extracted.tar.gz"
+          rmdir --ignore-fail-on-non-empty "${ISO_DIR}"

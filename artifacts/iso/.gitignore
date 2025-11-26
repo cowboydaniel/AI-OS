@@ -1,0 +1,7 @@
+# Local-only storage for upstream vendor installers; keeps large originals out of git history.
+vendor/
+!vendor/
+!vendor/.gitkeep
+
+# Optional cache directory for other temporary downloads.
+cache/

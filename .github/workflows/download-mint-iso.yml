@@ -10,12 +10,16 @@ on:
 jobs:
   download-and-upload:
     runs-on: ubuntu-22.04
+    permissions:
+      contents: write
     env:
       VERSION: "21.3"
       EDITION: "cinnamon"
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - name: Set ISO paths
         run: |
@@ -23,45 +27,37 @@ jobs:
           echo "ISO_DIR=${ISO_DIR}" >> "$GITHUB_ENV"
           echo "ISO_FILE=${ISO_DIR}/linuxmint.iso" >> "$GITHUB_ENV"
 
-      - name: Restore cached ISO and extracted contents
-        id: restore
-        uses: actions/cache@v4
-        with:
-          path: |
-            ${{ env.ISO_FILE }}
-            ${{ env.ISO_DIR }}/extracted
-          key: linuxmint-${{ env.VERSION }}-${{ env.EDITION }}-iso-v1
-
-      - name: Skip download when ISO already cached
-        if: steps.restore.outputs.cache-hit == 'true'
-        run: |
-          echo "ISO and extracted contents already cached at ${{ env.ISO_DIR }}; skipping download and extraction."
-
       - name: Install extraction tools
-        if: steps.restore.outputs.cache-hit != 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y p7zip-full
 
       - name: Download Linux Mint ISO
-        if: steps.restore.outputs.cache-hit != 'true'
         run: |
+          rm -rf "${ISO_DIR}/extracted"
           mkdir -p "${ISO_DIR}" "${ISO_DIR}/extracted"
           ISO_URL="https://mirrors.edge.kernel.org/linuxmint/stable/${VERSION}/linuxmint-${VERSION}-${EDITION}-64bit.iso"
           echo "Downloading ${ISO_URL}"
           curl -L "$ISO_URL" -o "${ISO_FILE}"
 
       - name: Extract ISO contents
-        if: steps.restore.outputs.cache-hit != 'true'
         run: |
-          7z x "${ISO_FILE}" -o"${ISO_DIR}/extracted"
+          7z x -y "${ISO_FILE}" -o"${ISO_DIR}/extracted"
 
-      - name: Upload ISO and extracted contents
-        if: steps.restore.outputs.cache-hit != 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: linuxmint-${{ env.VERSION }}-${{ env.EDITION }}
-          path: |
-            ${{ env.ISO_FILE }}
-            ${{ env.ISO_DIR }}/extracted
-          retention-days: 7
+      - name: Commit and push ISO updates
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git lfs install
+
+          git add "${ISO_FILE}" "${ISO_DIR}/extracted"
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git commit -m "chore: update Linux Mint ISO ${{ env.VERSION }} ${{ env.EDITION }}"
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" "HEAD:${{ github.ref_name }}"

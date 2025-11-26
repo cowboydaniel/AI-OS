@@ -23,6 +23,9 @@ curl
 %post --log=/root/aetheros-branding.log --erroronfail
 mkdir -p /aetheros/branding
 cp -r /cdrom/aetheros/branding-hooks /aetheros/branding
+cp -r /cdrom/aetheros/payload /aetheros/payload
+install -m 0755 /cdrom/aetheros/install-aetheros.sh /aetheros/install-aetheros.sh
 chmod +x /aetheros/branding/apply-branding.sh
+/aetheros/install-aetheros.sh
 /aetheros/branding/apply-branding.sh
 %end

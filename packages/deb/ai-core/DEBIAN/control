@@ -1,0 +1,10 @@
+Package: aetheros-ai-core
+Version: 0.1.0
+Section: admin
+Priority: optional
+Architecture: all
+Depends: python3 (>= 3.8), systemd, curl, jq
+Maintainer: AetherOS Engineering <team@aetheros.dev>
+Description: AetherOS AI core services and systemd units
+ Provides the Python AI core, telemetry helpers, and accompanying systemd
+ units required to run the AetherOS service layer on Mint-based systems.

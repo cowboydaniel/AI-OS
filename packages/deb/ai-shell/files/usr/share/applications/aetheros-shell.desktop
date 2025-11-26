@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=AetherOS AI Shell
+Comment=Launch the AetherOS AI desktop shell
+Exec=/usr/bin/aetheros-shell-launcher
+Icon=utilities-terminal
+Terminal=false
+Type=Application
+Categories=Utility;System;

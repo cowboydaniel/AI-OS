@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+LOG_DIR="/var/log/aetheros"
+mkdir -p "${LOG_DIR}" && chmod 755 "${LOG_DIR}"
+
+if command -v systemctl >/dev/null 2>&1 && pidof systemd >/dev/null 2>&1; then
+  systemctl daemon-reload
+  for unit in aetheros-ai-core.service aetheros-telemetry.service aetheros-healthcheck.timer; do
+    if systemctl list-unit-files | grep -q "^${unit}"; then
+      systemctl enable --now "${unit}" || true
+    fi
+  done
+else
+  echo "Systemd is unavailable; skipping service enablement." >&2
+fi

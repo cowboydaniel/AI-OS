@@ -23,10 +23,13 @@ Mint-based remaster strategy and avoid embedding binaries in Git history.
   - Publishes the remastered ISO and checksum manifest as the
     `aetheros-iso-smoke` artifact.
 
-### Download Linux Mint ISO (`.github/workflows/download-mint-iso.yml`)
-- Keeps a reference Mint image available under `artifacts/iso/linuxmint-*`.
+### Build and Publish AetherOS ISO (`.github/workflows/download-mint-iso.yml`)
 - Scheduled weekly and on pushes to `main`.
-- Uses Git LFS for the downloaded ISO.
+- Downloads the Linux Mint Cinnamon ISO, remasters it with AetherOS assets using
+  `build/iso/scripts/remaster.sh`, and regenerates the ISO.
+- Produces a checksum manifest via `build/iso/scripts/generate_checksums.sh`.
+- Publishes the rebuilt ISO and checksum file as GitHub release assets (no
+  binaries are committed to git history).
 
 ## Running checks locally
 

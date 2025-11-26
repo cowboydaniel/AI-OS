@@ -36,11 +36,11 @@
 - [x] Document telemetry and logging expectations
 
 ## Phase 6: Service Layer
-- [ ] Draft systemd unit templates for AI core
-- [ ] Add background task/telemetry service definitions
-- [ ] Define service health checks
-- [ ] Wire service logs/metrics collection
-- [ ] Document deployment/service management
+- [x] Draft systemd unit templates for AI core
+- [x] Add background task/telemetry service definitions
+- [x] Define service health checks
+- [x] Wire service logs/metrics collection
+- [x] Document deployment/service management
 
 ## Phase 7: Packaging Strategy
 - [ ] Decide between `.deb` or Flatpak for shell/core

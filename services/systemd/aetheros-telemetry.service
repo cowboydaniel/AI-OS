@@ -1,0 +1,29 @@
+[Unit]
+Description=AetherOS telemetry and metrics agent
+After=aetheros-ai-core.service
+Requires=aetheros-ai-core.service
+
+[Service]
+Type=simple
+User=aetheros
+Group=aetheros
+WorkingDirectory=/opt/aetheros
+Environment=AETHEROS_TELEMETRY_QUEUE=/var/lib/aetheros/telemetry/events.log
+Environment=AETHEROS_METRICS_PATH=/var/lib/aetheros/telemetry/metrics.prom
+Environment=AETHEROS_TELEMETRY_PORT=8043
+Environment=AETHEROS_TELEMETRY_HOST=0.0.0.0
+ExecStartPre=/usr/bin/install -d -o aetheros -g aetheros -m 0755 /var/lib/aetheros/telemetry
+ExecStart=/usr/bin/python3 /opt/aetheros/services/bin/aetheros-telemetry-agent
+Restart=on-failure
+RestartSec=2
+StateDirectory=aetheros
+StateDirectoryMode=0755
+LogsDirectory=aetheros
+LogsDirectoryMode=0755
+RuntimeDirectory=aetheros
+RuntimeDirectoryMode=0755
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

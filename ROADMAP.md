@@ -57,11 +57,11 @@
 - [x] Store ISOs in `artifacts/iso/` via Git LFS pointers
 
 ## Phase 9: CI/CD Integration
-- [ ] Add lint/build pipelines for packages and scripts
-- [ ] Enforce LFS rules for large binaries
-- [ ] Automate ISO smoke tests in CI
-- [ ] Publish build artifacts to release storage
-- [ ] Document CI/CD workflows for contributors
+- [x] Add lint/build pipelines for packages and scripts
+- [x] Enforce LFS rules for large binaries
+- [x] Automate ISO smoke tests in CI
+- [x] Publish build artifacts to release storage
+- [x] Document CI/CD workflows for contributors
 
 ## Phase 10: Release Readiness
 - [ ] Finalize documentation and release notes

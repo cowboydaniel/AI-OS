@@ -47,4 +47,5 @@ To be determined—final decision pending.
 - `docs/BUILD_PLAN.md` – High-level roadmap for build, packaging, services, and UI layers.
 - `docs/ISO_LFS_PLAN.md` – How to handle installer ISOs with Git LFS and release artifacts.
 - `docs/TOOLCHAIN.md` – Required tools and recommended versions for remastering and development.
+- `docs/CI_CD.md` – Overview of CI/CD workflows, LFS enforcement, and smoke tests.
 - `ROADMAP.md` – Phase-by-phase checklist for delivering the OS.

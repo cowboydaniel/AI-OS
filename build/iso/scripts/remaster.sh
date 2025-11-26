@@ -54,7 +54,7 @@ append_kernel_params() {
 }
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-REPO_ROOT=$(realpath "$SCRIPT_DIR/../..")
+REPO_ROOT=$(realpath "$SCRIPT_DIR/../../..")
 
 ISO=""
 WORKDIR="$REPO_ROOT/build/iso/work"
@@ -136,6 +136,13 @@ install -m 0755 "$INSTALLER" "$STAGING/aetheros/install-aetheros.sh"
 PAYLOAD_ROOT="$STAGING/aetheros/payload"
 mkdir -p "$PAYLOAD_ROOT"
 echo "[2/5] Staging AI shell, services, and configuration payload"
+mkdir -p \
+  "$PAYLOAD_ROOT/ui" \
+  "$PAYLOAD_ROOT/services/bin" \
+  "$PAYLOAD_ROOT/services/systemd" \
+  "$PAYLOAD_ROOT/ai-core/ai_core" \
+  "$PAYLOAD_ROOT/config"
+
 rsync -a "$UI_SRC/" "$PAYLOAD_ROOT/ui/"
 rsync -a "$SERVICES_SRC/bin/" "$PAYLOAD_ROOT/services/bin/"
 rsync -a "$SERVICES_SRC/systemd/" "$PAYLOAD_ROOT/services/systemd/"

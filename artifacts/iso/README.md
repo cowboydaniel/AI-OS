@@ -1,3 +1,10 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:2f49866deac505ee288a12195f65071a7e83b9bc18adb704f6094fa7697e993d
-size 300
+# ISO artifacts
+
+This directory stores generated installer images and related checksums. ISOs and
+other large binaries should be added via Git LFS, but keep documentation like
+this README as standard text so it remains accessible even when LFS objects are
+unavailable. Use the checksum files to verify downloaded images before use.
+
+Do not commit binary payloads directly to the repository. Publish built images
+as release assets or other external downloads, and keep only the associated
+checksums or signatures under Git LFS.

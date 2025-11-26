@@ -17,11 +17,18 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
-# Ensure the ai_core package is importable when running from a checkout
+# Ensure the ai_core package is importable when running from a checkout or installed path
 REPO_ROOT = Path(__file__).resolve().parents[2]
-AI_CORE_PATH = REPO_ROOT / "ai-core"
-if AI_CORE_PATH.exists() and str(AI_CORE_PATH) not in sys.path:
-    sys.path.insert(0, str(AI_CORE_PATH))
+AI_CORE_SEARCH_PATHS = [
+    REPO_ROOT / "ai-core",
+    Path("/opt/aetheros/ai-core"),
+    Path("/usr/lib/aetheros/ai-core"),
+]
+
+for candidate in AI_CORE_SEARCH_PATHS:
+    if candidate.exists() and str(candidate) not in sys.path:
+        sys.path.insert(0, str(candidate))
+        break
 
 from ai_core.command_translation import (  # type: ignore  # noqa: E402
     CommandContext,

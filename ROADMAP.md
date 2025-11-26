@@ -43,11 +43,11 @@
 - [x] Document deployment/service management
 
 ## Phase 7: Packaging Strategy
-- [ ] Decide between `.deb` or Flatpak for shell/core
-- [ ] Create `packages/README.md` with conventions
-- [ ] Provide sample packaging manifests
-- [ ] Add packaging build scripts
-- [ ] Validate packages inside remastered ISO
+- [x] Decide between `.deb` or Flatpak for shell/core
+- [x] Create `packages/README.md` with conventions
+- [x] Provide sample packaging manifests
+- [x] Add packaging build scripts
+- [x] Validate packages inside remastered ISO
 
 ## Phase 8: ISO Build Automation
 - [ ] Finalize remaster scripts for Mint Cinnamon

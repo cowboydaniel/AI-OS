@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+UI_ROOT="/opt/aetheros/ui"
+INDEX_FILE="${UI_ROOT}/index.html"
+
+if [[ ! -f "${INDEX_FILE}" ]]; then
+  echo "AetherOS UI assets are missing from ${UI_ROOT}." >&2
+  echo "Reinstall the aetheros-ai-shell package or rebuild the ISO." >&2
+  exit 1
+fi
+
+echo "Launching AetherOS shell from ${INDEX_FILE}"
+if command -v xdg-open >/dev/null 2>&1; then
+  xdg-open "${INDEX_FILE}" >/dev/null 2>&1 &
+else
+  echo "xdg-open is unavailable. Open ${INDEX_FILE} in your browser." >&2
+fi

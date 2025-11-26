@@ -1,0 +1,43 @@
+translator:
+  implementation: rule_based
+  safety_level: restricted
+  verbs:
+    - open browser
+    - list files
+    - show system info
+    - update packages
+    - upgrade packages
+    - check disk usage
+
+model_runner:
+  runner: shell
+  command: llama.cpp
+  model_path: /opt/aetheros/models/llama.bin
+  timeout_seconds: 45
+  working_directory: /opt/aetheros/models
+  extra_env: {}
+
+sandbox:
+  base_workdir: /var/lib/aetheros/sandbox
+  allowed_binaries:
+    - ls
+    - cat
+    - echo
+    - uname
+    - df
+  allow_network: false
+  memory_limit_mb: 512
+  cpu_shares: 512
+
+logging:
+  level: INFO
+  json: false
+  path: /var/log/aetheros/ai-core.log
+
+telemetry:
+  enabled: true
+  redact_environment: true
+  max_event_rate_per_minute: 60
+  sinks:
+    - stdout
+    - file

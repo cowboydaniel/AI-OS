@@ -1,0 +1,11 @@
+Package: aetheros-ai-shell
+Version: 0.1.0
+Section: x11
+Priority: optional
+Architecture: all
+Depends: python3 (>= 3.8), xdg-utils
+Maintainer: AetherOS Engineering <team@aetheros.dev>
+Description: AetherOS AI shell front-end and desktop entry
+ This package delivers the AetherOS shell web assets and a desktop launcher
+ that opens the shipped UI directly from /opt/aetheros/ui. It is intended for
+ installation on Mint-based systems and complements the AI core service.

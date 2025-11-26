@@ -1,0 +1,63 @@
+name: Download Linux Mint ISO
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "0 6 * * 1" # Mondays at 06:00 UTC
+
+jobs:
+  download-and-upload:
+    runs-on: ubuntu-22.04
+    env:
+      VERSION: "21.3"
+      EDITION: "cinnamon"
+      ISO_DIR: artifacts/iso/linuxmint-${{ env.VERSION }}-${{ env.EDITION }}
+      ISO_FILE: ${{ env.ISO_DIR }}/linuxmint.iso
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Restore cached ISO and extracted contents
+        id: restore
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.ISO_FILE }}
+            ${{ env.ISO_DIR }}/extracted
+          key: linuxmint-${{ env.VERSION }}-${{ env.EDITION }}-iso-v1
+
+      - name: Skip download when ISO already cached
+        if: steps.restore.outputs.cache-hit == 'true'
+        run: |
+          echo "ISO and extracted contents already cached at ${{ env.ISO_DIR }}; skipping download and extraction."
+
+      - name: Install extraction tools
+        if: steps.restore.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y p7zip-full
+
+      - name: Download Linux Mint ISO
+        if: steps.restore.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p "${ISO_DIR}" "${ISO_DIR}/extracted"
+          ISO_URL="https://mirrors.edge.kernel.org/linuxmint/stable/${VERSION}/linuxmint-${VERSION}-${EDITION}-64bit.iso"
+          echo "Downloading ${ISO_URL}"
+          curl -L "$ISO_URL" -o "${ISO_FILE}"
+
+      - name: Extract ISO contents
+        if: steps.restore.outputs.cache-hit != 'true'
+        run: |
+          7z x "${ISO_FILE}" -o"${ISO_DIR}/extracted"
+
+      - name: Upload ISO and extracted contents
+        if: steps.restore.outputs.cache-hit != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: linuxmint-${{ env.VERSION }}-${{ env.EDITION }}
+          path: |
+            ${{ env.ISO_FILE }}
+            ${{ env.ISO_DIR }}/extracted
+          retention-days: 7

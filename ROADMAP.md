@@ -50,11 +50,11 @@
 - [x] Validate packages inside remastered ISO
 
 ## Phase 8: ISO Build Automation
-- [ ] Finalize remaster scripts for Mint Cinnamon
-- [ ] Integrate AI shell and services into image
-- [ ] Apply branding (wallpaper, Cinnamon defaults)
-- [ ] Automate checksum/signature publishing
-- [ ] Store ISOs in `artifacts/iso/` via Git LFS pointers
+- [x] Finalize remaster scripts for Mint Cinnamon
+- [x] Integrate AI shell and services into image
+- [x] Apply branding (wallpaper, Cinnamon defaults)
+- [x] Automate checksum/signature publishing
+- [x] Store ISOs in `artifacts/iso/` via Git LFS pointers
 
 ## Phase 9: CI/CD Integration
 - [ ] Add lint/build pipelines for packages and scripts

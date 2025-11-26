@@ -23,8 +23,10 @@ jobs:
 
       - name: Set ISO paths
         run: |
-          ISO_DIR="artifacts/iso/linuxmint-${{ env.VERSION }}-${{ env.EDITION }}"
+          ISO_DIR="${RUNNER_TEMP}/linuxmint-${VERSION}-${EDITION}"
           ISO_EXTRACT_DIR="${ISO_DIR}/extracted"
+          mkdir -p "${ISO_DIR}"
+
           echo "ISO_DIR=${ISO_DIR}" >> "$GITHUB_ENV"
           echo "ISO_FILE=${ISO_DIR}/linuxmint.iso" >> "$GITHUB_ENV"
           echo "ISO_EXTRACT_DIR=${ISO_EXTRACT_DIR}" >> "$GITHUB_ENV"
@@ -36,8 +38,6 @@ jobs:
 
       - name: Download Linux Mint ISO
         run: |
-          rm -rf "${ISO_DIR}"
-          mkdir -p "${ISO_DIR}"
           ISO_URL="https://mirrors.edge.kernel.org/linuxmint/stable/${VERSION}/linuxmint-${VERSION}-${EDITION}-64bit.iso"
           echo "Downloading ${ISO_URL}"
           curl -L "$ISO_URL" -o "${ISO_FILE}"
@@ -61,20 +61,22 @@ jobs:
           bsdtar -C "${ISO_EXTRACT_DIR}" -xf "${ISO_FILE}"
           tree -L 2 "${ISO_EXTRACT_DIR}" | sed 's/^/  /' >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Commit extracted contents
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add "${ISO_EXTRACT_DIR}" "${ISO_DIR}/linuxmint.sha256"
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
-            exit 0
-          fi
-          git commit -m "Update extracted Linux Mint ISO ${VERSION} ${EDITION}"
-          git push origin HEAD:${GITHUB_REF#refs/heads/}
+      - name: Upload ISO and checksum as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linuxmint-${{ env.VERSION }}-${{ env.EDITION }}-iso
+          path: |
+            ${{ env.ISO_FILE }}
+            ${{ env.ISO_DIR }}/linuxmint.sha256
+          retention-days: 7
+
+      - name: Upload extracted ISO contents as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linuxmint-${{ env.VERSION }}-${{ env.EDITION }}-extracted
+          path: ${{ env.ISO_EXTRACT_DIR }}
+          retention-days: 7
 
       - name: Clean up downloaded ISO
         run: |
-          rm -f "${ISO_FILE}"
+          rm -rf "${ISO_DIR}"

@@ -1,3 +1,7 @@
 # Track installer images and other large binary artifacts with Git LFS
 *.iso filter=lfs diff=lfs merge=lfs -text
-artifacts/iso/** filter=lfs diff=lfs merge=lfs -text
+# Restrict LFS in the ISO directory to built images and checksum/signature
+# outputs so that docs remain normal text files.
+artifacts/iso/*.iso filter=lfs diff=lfs merge=lfs -text
+artifacts/iso/*.sha256 filter=lfs diff=lfs merge=lfs -text
+artifacts/iso/*.sig filter=lfs diff=lfs merge=lfs -text

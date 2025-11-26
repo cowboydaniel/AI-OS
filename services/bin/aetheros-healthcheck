@@ -1,0 +1,60 @@
+#!/usr/bin/env python3
+"""Health check runner for AetherOS services."""
+
+from __future__ import annotations
+
+import json
+import os
+import sys
+import urllib.error
+import urllib.request
+from typing import Dict, Tuple
+
+CORE_URL = os.getenv("AETHEROS_CORE_HEALTH", "http://127.0.0.1:8042/healthz")
+TELEMETRY_URL = os.getenv("AETHEROS_TELEMETRY_HEALTH", "http://127.0.0.1:8043/healthz")
+TIMEOUT = float(os.getenv("AETHEROS_HEALTH_TIMEOUT", "3"))
+
+
+class HealthResult:
+    def __init__(self, name: str, ok: bool, payload: Dict[str, object] | None = None, error: str | None = None) -> None:
+        self.name = name
+        self.ok = ok
+        self.payload = payload or {}
+        self.error = error
+
+    def __repr__(self) -> str:  # noqa: D401
+        return f"HealthResult(name={self.name}, ok={self.ok})"
+
+
+def _fetch(url: str) -> Tuple[bool, Dict[str, object] | None, str | None]:
+    try:
+        with urllib.request.urlopen(url, timeout=TIMEOUT) as response:
+            body = response.read().decode("utf-8")
+            return response.status == 200, json.loads(body), None
+    except urllib.error.URLError as exc:
+        return False, None, str(exc)
+    except json.JSONDecodeError:
+        return False, None, "invalid json"
+
+
+def run_checks() -> Tuple[int, list[HealthResult]]:
+    results: list[HealthResult] = []
+    for name, url in ("ai-core", CORE_URL), ("telemetry", TELEMETRY_URL):
+        ok, payload, error = _fetch(url)
+        results.append(HealthResult(name=name, ok=ok, payload=payload, error=error))
+
+    exit_code = 0 if all(result.ok for result in results) else 1
+    return exit_code, results
+
+
+def main() -> None:
+    exit_code, results = run_checks()
+    for result in results:
+        status = "OK" if result.ok else "FAIL"
+        details = result.payload if result.ok else {"error": result.error}
+        print(f"[{status}] {result.name}: {details}")
+    sys.exit(exit_code)
+
+
+if __name__ == "__main__":
+    main()

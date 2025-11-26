@@ -1,0 +1,10 @@
+[Unit]
+Description=Run AetherOS health checks on a cadence
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+Unit=aetheros-healthcheck.service
+
+[Install]
+WantedBy=timers.target

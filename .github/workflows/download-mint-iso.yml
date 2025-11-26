@@ -13,11 +13,15 @@ jobs:
     env:
       VERSION: "21.3"
       EDITION: "cinnamon"
-      ISO_DIR: artifacts/iso/linuxmint-${{ env.VERSION }}-${{ env.EDITION }}
-      ISO_FILE: ${{ env.ISO_DIR }}/linuxmint.iso
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Set ISO paths
+        run: |
+          ISO_DIR="artifacts/iso/linuxmint-${{ env.VERSION }}-${{ env.EDITION }}"
+          echo "ISO_DIR=${ISO_DIR}" >> "$GITHUB_ENV"
+          echo "ISO_FILE=${ISO_DIR}/linuxmint.iso" >> "$GITHUB_ENV"
 
       - name: Restore cached ISO and extracted contents
         id: restore

@@ -29,6 +29,11 @@ jobs:
           echo "ISO_FILE=${ISO_DIR}/linuxmint.iso" >> "$GITHUB_ENV"
           echo "ISO_EXTRACT_DIR=${ISO_EXTRACT_DIR}" >> "$GITHUB_ENV"
 
+      - name: Install extraction tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bsdtar
+
       - name: Download Linux Mint ISO
         run: |
           rm -rf "${ISO_DIR}"
@@ -56,22 +61,20 @@ jobs:
           bsdtar -C "${ISO_EXTRACT_DIR}" -xf "${ISO_FILE}"
           tree -L 2 "${ISO_EXTRACT_DIR}" | sed 's/^/  /' >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Archive extracted contents
+      - name: Commit extracted contents
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          tar -czf "${ISO_DIR}/linuxmint-extracted.tar.gz" -C "${ISO_EXTRACT_DIR}" .
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: linuxmint-${{ env.VERSION }}-${{ env.EDITION }}-artifacts
-          path: |
-            ${{ env.ISO_DIR }}/linuxmint.sha256
-            ${{ env.ISO_DIR }}/linuxmint-extracted.tar.gz
-          retention-days: 14
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add "${ISO_EXTRACT_DIR}" "${ISO_DIR}/linuxmint.sha256"
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Update extracted Linux Mint ISO ${VERSION} ${EDITION}"
+          git push origin HEAD:${GITHUB_REF#refs/heads/}
 
       - name: Clean up downloaded ISO
         run: |
           rm -f "${ISO_FILE}"
-          rm -rf "${ISO_EXTRACT_DIR}"
-          rm -f "${ISO_DIR}/linuxmint-extracted.tar.gz"
-          rmdir --ignore-fail-on-non-empty "${ISO_DIR}"

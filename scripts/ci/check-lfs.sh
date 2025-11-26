@@ -19,12 +19,16 @@ while IFS= read -r -d '' file; do
   fi
 done < <(git ls-files -z)
 
-# Enforce that anything under artifacts/iso/ stays on LFS even if small
+# Enforce LFS for installer outputs in artifacts/iso/ (but allow docs)
 while IFS= read -r -d '' iso_path; do
-  attr=$(git check-attr filter -- "$iso_path" | awk -F': ' '{print $3}')
-  if [[ "$attr" != "lfs" ]]; then
-    errors+=("$iso_path should be tracked by Git LFS via .gitattributes")
-  fi
+  case "$iso_path" in
+    artifacts/iso/*.iso|artifacts/iso/*.sha256|artifacts/iso/*.sig)
+      attr=$(git check-attr filter -- "$iso_path" | awk -F': ' '{print $3}')
+      if [[ "$attr" != "lfs" ]]; then
+        errors+=("$iso_path should be tracked by Git LFS via .gitattributes")
+      fi
+      ;;
+  esac
 done < <(git ls-files -z "artifacts/iso/**" 2>/dev/null)
 
 if (( ${#errors[@]} > 0 )); then

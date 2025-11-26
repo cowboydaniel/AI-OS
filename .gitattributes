@@ -5,3 +5,8 @@
 artifacts/iso/*.iso filter=lfs diff=lfs merge=lfs -text
 artifacts/iso/*.sha256 filter=lfs diff=lfs merge=lfs -text
 artifacts/iso/*.sig filter=lfs diff=lfs merge=lfs -text
+# Ensure nested build outputs in the ISO tree are also kept in LFS to avoid
+# oversized Git objects when using subdirectories for variants.
+artifacts/iso/**/*.iso filter=lfs diff=lfs merge=lfs -text
+artifacts/iso/**/*.sha256 filter=lfs diff=lfs merge=lfs -text
+artifacts/iso/**/*.sig filter=lfs diff=lfs merge=lfs -text

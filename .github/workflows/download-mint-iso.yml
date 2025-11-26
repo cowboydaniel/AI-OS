@@ -11,7 +11,7 @@ jobs:
   download-and-upload:
     runs-on: ubuntu-22.04
     permissions:
-      contents: read
+      contents: write
     env:
       VERSION: "21.3"
       EDITION: "cinnamon"

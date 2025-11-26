@@ -1,0 +1,48 @@
+name: Download Linux Mint ISO
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Linux Mint version to download (e.g., 21.3)"
+        required: false
+        default: "21.3"
+      edition:
+        description: "Desktop edition (cinnamon, mate, xfce)"
+        required: false
+        default: "cinnamon"
+
+jobs:
+  download-and-upload:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install extraction tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y p7zip-full
+
+      - name: Download Linux Mint ISO
+        env:
+          VERSION: ${{ inputs.version }}
+          EDITION: ${{ inputs.edition }}
+        run: |
+          ISO_URL="https://mirrors.edge.kernel.org/linuxmint/stable/${VERSION}/linuxmint-${VERSION}-${EDITION}-64bit.iso"
+          echo "Downloading ${ISO_URL}"
+          curl -L "$ISO_URL" -o linuxmint.iso
+
+      - name: Extract ISO contents
+        run: |
+          mkdir -p extracted
+          7z x linuxmint.iso -oextracted
+
+      - name: Upload ISO and extracted contents
+        uses: actions/upload-artifact@v4
+        with:
+          name: linuxmint-${{ inputs.version }}-${{ inputs.edition }}
+          path: |
+            linuxmint.iso
+            extracted
+          retention-days: 7

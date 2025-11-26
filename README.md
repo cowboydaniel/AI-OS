@@ -34,8 +34,14 @@ The remaster workflow expects a Mint-aligned environment with ISO tooling, Git L
 - **System Shell Layer:** Graphical/terminal hybrid providing the AI Desktop Shell, persistent sessions, and wallpaper integration.
 - **Background Services:** Secure relays for permissions, application orchestration, and telemetry.
 
-## Installation (work in progress)
-AetherOS will ship as a patched Linux Mint Cinnamon ISO with accompanying packages. Final installation steps will be published once the remaster scripts mature.
+## Installation and onboarding
+Download the latest remastered ISO from the release page, verify the checksum/signature with the published release key, and flash it to a USB drive. Follow the guided installer, then run `scripts/bootstrap-dev.sh` on first boot to provision developer tooling and validate services. Additional release notes and platform-specific validation guidance live in `docs/RELEASE_READINESS.md`.
+
+## Release and support cadence
+- **Security updates:** monthly patch windows with emergency fixes for critical issues.
+- **Feature updates:** quarterly feature drops aligned to roadmap phases.
+- **LTS maintenance:** 12-month support window per major ISO with backported critical fixes.
+- **Communication:** release notes and known issues posted alongside each tagged ISO; support threads pinned for Q&A.
 
 ## Contributing
 AetherOS is in active development. Review `CONTRIBUTING.md`, pick issues from the roadmap, and propose changes using the provided issue templates.
@@ -48,4 +54,5 @@ To be determined—final decision pending.
 - `docs/ISO_LFS_PLAN.md` – How to handle installer ISOs with Git LFS and release artifacts.
 - `docs/TOOLCHAIN.md` – Required tools and recommended versions for remastering and development.
 - `docs/CI_CD.md` – Overview of CI/CD workflows, LFS enforcement, and smoke tests.
+- `docs/RELEASE_READINESS.md` – Release notes, installer validation matrix, and signing/mirror guidance.
 - `ROADMAP.md` – Phase-by-phase checklist for delivering the OS.

@@ -1,0 +1,14 @@
+[Unit]
+Description=AetherOS periodic service layer health verification
+After=aetheros-ai-core.service aetheros-telemetry.service
+
+[Service]
+Type=oneshot
+User=aetheros
+Group=aetheros
+Environment=AETHEROS_CORE_HEALTH=http://127.0.0.1:8042/healthz
+Environment=AETHEROS_TELEMETRY_HEALTH=http://127.0.0.1:8043/healthz
+ExecStart=/usr/bin/python3 /opt/aetheros/services/bin/aetheros-healthcheck
+
+[Install]
+WantedBy=multi-user.target

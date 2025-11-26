@@ -1,0 +1,399 @@
+#!/usr/bin/env python3
+"""HTTP service exposing AI Core translation endpoints."""
+
+from __future__ import annotations
+
+import importlib.util
+import json
+import logging
+import logging.handlers
+import os
+import signal
+import sys
+import threading
+import time
+from http import HTTPStatus
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from typing import Any, Dict, Optional, Tuple
+
+# Ensure the ai_core package is importable when running from a checkout
+REPO_ROOT = Path(__file__).resolve().parents[2]
+AI_CORE_PATH = REPO_ROOT / "ai-core"
+if AI_CORE_PATH.exists() and str(AI_CORE_PATH) not in sys.path:
+    sys.path.insert(0, str(AI_CORE_PATH))
+
+from ai_core.command_translation import (  # type: ignore  # noqa: E402
+    CommandContext,
+    CommandRequest,
+    RuleBasedCommandTranslator,
+)
+from ai_core.model_runner import LocalModelRunner, ModelRunnerConfig  # type: ignore  # noqa: E402
+
+DEFAULT_CONFIG = {
+    "translator": {
+        "implementation": "rule_based",
+        "safety_level": "restricted",
+        "verbs": [
+            "open browser",
+            "list files",
+            "show system info",
+            "update packages",
+            "upgrade packages",
+            "check disk usage",
+        ],
+        "command_map": {
+            "open browser": ["xdg-open", "https://linuxmint.com"],
+            "list files": ["ls", "-la"],
+            "show system info": ["uname", "-a"],
+            "update packages": ["sudo", "apt", "update"],
+            "upgrade packages": ["sudo", "apt", "upgrade", "-y"],
+            "check disk usage": ["df", "-h"],
+        },
+    },
+    "model_runner": {
+        "runner": "shell",
+        "command": "llama.cpp",
+        "model_path": "/opt/aetheros/models/llama.bin",
+        "timeout_seconds": 45,
+        "working_directory": "/opt/aetheros/models",
+        "extra_env": {},
+    },
+    "sandbox": {
+        "allow_network": False,
+        "allowed_binaries": ["ls", "cat", "echo", "uname", "df"],
+    },
+    "logging": {
+        "level": "INFO",
+        "json": False,
+        "path": "/var/log/aetheros/ai-core.log",
+    },
+    "telemetry": {
+        "enabled": True,
+        "redact_environment": True,
+        "max_event_rate_per_minute": 60,
+        "sinks": ["stdout", "file"],
+        "queue_path": "/var/lib/aetheros/telemetry/events.log",
+    },
+    "service": {
+        "port": 8042,
+        "host": "0.0.0.0",
+    },
+}
+
+AETHEROS_CONFIG_PATH = Path(os.getenv("AETHEROS_CONFIG", "/etc/aetheros/ai-core.yaml"))
+DEFAULT_TELEMETRY_PATH = Path(
+    os.getenv("AETHEROS_TELEMETRY_QUEUE", "/var/lib/aetheros/telemetry/events.log")
+)
+_metrics = {
+    "http_requests_total": 0,
+    "http_errors_total": 0,
+    "translations_total": 0,
+    "translation_failures_total": 0,
+}
+
+shutdown_event = threading.Event()
+
+
+def _load_yaml_config(path: Path) -> Dict[str, Any]:
+    if not path.exists():
+        return {}
+
+    yaml_spec = importlib.util.find_spec("yaml")
+    if yaml_spec is None:
+        raise RuntimeError(f"PyYAML is required to load {path}")
+
+    import yaml  # type: ignore
+
+    with path.open("r", encoding="utf-8") as handle:
+        return yaml.safe_load(handle) or {}
+
+
+def _merge_config(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+    merged = dict(base)
+    for key, value in override.items():
+        if isinstance(value, dict) and isinstance(base.get(key), dict):
+            merged[key] = _merge_config(base[key], value)  # type: ignore[arg-type]
+        else:
+            merged[key] = value
+    return merged
+
+
+def _configure_logging(config: Dict[str, Any]) -> logging.Logger:
+    logger = logging.getLogger("aetheros.ai_core.service")
+    if logger.handlers:
+        return logger
+
+    level = getattr(logging, str(config.get("level", "INFO")).upper(), logging.INFO)
+    logger.setLevel(level)
+
+    formatter = logging.Formatter(
+        "%(asctime)s %(levelname)s %(name)s %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%S%z",
+    )
+
+    stream_handler = logging.StreamHandler(sys.stdout)
+    stream_handler.setFormatter(formatter)
+    logger.addHandler(stream_handler)
+
+    log_path_str: Optional[str] = config.get("path")
+    if log_path_str:
+        log_path = Path(log_path_str)
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        file_handler = logging.handlers.RotatingFileHandler(
+            log_path, maxBytes=2_000_000, backupCount=3
+        )
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+
+    return logger
+
+
+def emit_telemetry(
+    event_type: str, payload: Dict[str, Any], telemetry_path: Path, logger: logging.Logger
+) -> None:
+    telemetry_path.parent.mkdir(parents=True, exist_ok=True)
+    record = {"type": event_type, "payload": payload, "ts": int(time.time())}
+    with telemetry_path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(record) + "\n")
+    logger.debug("Recorded telemetry event", extra={"type": event_type})
+
+
+class TranslationHandler(BaseHTTPRequestHandler):
+    translator: RuleBasedCommandTranslator
+    runner: LocalModelRunner
+    telemetry_path: Path
+    logger: logging.Logger
+    telemetry_enabled: bool
+    default_safety_level: str
+
+    server_version = "AetherOSAI/1.0"
+
+    def _set_headers(
+        self, status: HTTPStatus = HTTPStatus.OK, content_type: str = "application/json"
+    ) -> None:
+        self.send_response(status)
+        self.send_header("Content-Type", content_type)
+        self.end_headers()
+
+    def log_message(self, format: str, *args: object) -> None:  # noqa: A003
+        self.logger.info("%s - %s", self.address_string(), format % args)
+
+    def _read_json(self) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+        length_header = self.headers.get("Content-Length")
+        if not length_header:
+            return None, "missing content length"
+        try:
+            length = int(length_header)
+        except ValueError:
+            return None, "invalid content length"
+
+        raw = self.rfile.read(length)
+        try:
+            return json.loads(raw.decode("utf-8")), None
+        except json.JSONDecodeError:
+            return None, "invalid json"
+
+    def do_GET(self) -> None:  # noqa: N802
+        _metrics["http_requests_total"] += 1
+        if self.path.startswith("/healthz"):
+            self._serve_health()
+            return
+        if self.path.startswith("/metrics"):
+            self._serve_metrics()
+            return
+
+        _metrics["http_errors_total"] += 1
+        self._set_headers(HTTPStatus.NOT_FOUND)
+        self.wfile.write(json.dumps({"error": "unknown endpoint"}).encode("utf-8"))
+
+    def do_POST(self) -> None:  # noqa: N802
+        _metrics["http_requests_total"] += 1
+        if not self.path.startswith("/translate"):
+            _metrics["http_errors_total"] += 1
+            self._set_headers(HTTPStatus.NOT_FOUND)
+            self.wfile.write(json.dumps({"error": "unknown endpoint"}).encode("utf-8"))
+            return
+
+        payload, error = self._read_json()
+        if error:
+            _metrics["http_errors_total"] += 1
+            self._set_headers(HTTPStatus.BAD_REQUEST)
+            self.wfile.write(json.dumps({"error": error}).encode("utf-8"))
+            return
+
+        try:
+            response = self._handle_translate(payload or {})
+            _metrics["translations_total"] += 1
+            self._set_headers()
+            self.wfile.write(json.dumps(response).encode("utf-8"))
+        except Exception as exc:  # noqa: BLE001
+            _metrics["translation_failures_total"] += 1
+            _metrics["http_errors_total"] += 1
+            self.logger.exception("Translation failed")
+            self._set_headers(HTTPStatus.INTERNAL_SERVER_ERROR)
+            self.wfile.write(json.dumps({"error": str(exc)}).encode("utf-8"))
+
+    def _handle_translate(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        text = str(payload.get("text") or "").strip()
+        if not text:
+            raise ValueError("text is required")
+
+        context_data = payload.get("context") or {}
+        context = CommandContext(
+            working_directory=context_data.get("working_directory", "/home"),
+            environment=context_data.get("environment", {}),
+            allow_network=bool(context_data.get("allow_network", False)),
+        )
+        request = CommandRequest(
+            text=text,
+            context=context,
+            safety_level=str(
+                payload.get("safety_level", self.default_safety_level)
+            ),
+        )
+
+        translation = self.translator.translate(request)
+        model_prompt = payload.get("model_prompt")
+        model_response: Optional[str] = None
+        if model_prompt:
+            model_response = self.runner.generate(str(model_prompt))
+
+        if self.telemetry_enabled:
+            emit_telemetry(
+                "translation",
+                {
+                    "text": text,
+                    "intents": [intent.description for intent in translation.intents],
+                    "used_model": translation.used_model,
+                },
+                self.telemetry_path,
+                self.logger,
+            )
+
+        return {
+            "intents": [
+                {
+                    "description": intent.description,
+                    "command": list(intent.command),
+                    "confidence": intent.confidence,
+                    "requires_confirmation": intent.requires_confirmation,
+                    "notes": intent.notes,
+                }
+                for intent in translation.intents
+            ],
+            "rationale": translation.rationale,
+            "model_response": model_response,
+            "supported_verbs": list(self.translator.supported_verbs()),
+        }
+
+    def _serve_health(self) -> None:
+        translation_check = True
+        try:
+            self.runner.ensure_workdir()
+        except Exception:  # noqa: BLE001
+            translation_check = False
+
+        payload = {
+            "status": "ok" if translation_check else "degraded",
+            "translator_rules": len(list(self.translator.supported_verbs())),
+            "telemetry_path": str(self.telemetry_path),
+        }
+        self._set_headers()
+        self.wfile.write(json.dumps(payload).encode("utf-8"))
+
+    def _serve_metrics(self) -> None:
+        lines = [
+            "# HELP aetheros_http_requests_total Total HTTP requests.",
+            "# TYPE aetheros_http_requests_total counter",
+            f"aetheros_http_requests_total {_metrics['http_requests_total']}",
+            "# HELP aetheros_http_errors_total Total HTTP errors.",
+            "# TYPE aetheros_http_errors_total counter",
+            f"aetheros_http_errors_total {_metrics['http_errors_total']}",
+            "# HELP aetheros_translations_total Successful translations.",
+            "# TYPE aetheros_translations_total counter",
+            f"aetheros_translations_total {_metrics['translations_total']}",
+            "# HELP aetheros_translation_failures_total Failed translations.",
+            "# TYPE aetheros_translation_failures_total counter",
+            f"aetheros_translation_failures_total {_metrics['translation_failures_total']}",
+        ]
+        body = "\n".join(lines) + "\n"
+        self._set_headers(content_type="text/plain")
+        self.wfile.write(body.encode("utf-8"))
+
+
+def run_server(
+    host: str, port: int, telemetry_path: Path, logger: logging.Logger, config: Dict[str, Any]
+) -> ThreadingHTTPServer:
+    translator_config = config.get("translator", {})
+    translator = RuleBasedCommandTranslator(
+        command_map=translator_config.get("command_map")
+    )
+
+    runner_config = config.get("model_runner", {})
+    runner = LocalModelRunner(
+        ModelRunnerConfig(
+            runner=runner_config.get("runner", "shell"),
+            command=runner_config.get("command", "llama.cpp"),
+            model_path=runner_config.get("model_path"),
+            endpoint=runner_config.get("endpoint"),
+            timeout_seconds=int(runner_config.get("timeout_seconds", 45)),
+            working_directory=runner_config.get("working_directory", "/opt/aetheros/models"),
+            extra_env=runner_config.get("extra_env") or {},
+        )
+    )
+
+    TranslationHandler.translator = translator
+    TranslationHandler.runner = runner
+    TranslationHandler.telemetry_path = telemetry_path
+    TranslationHandler.logger = logger
+
+    telemetry_config = config.get("telemetry", {})
+    TranslationHandler.telemetry_enabled = bool(telemetry_config.get("enabled", True))
+    TranslationHandler.default_safety_level = translator_config.get(
+        "safety_level", "restricted"
+    )
+
+    server = ThreadingHTTPServer((host, port), TranslationHandler)
+    logger.info("Starting AI Core service", extra={"port": port, "host": host})
+
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    return server
+
+
+def main() -> None:
+    config = _merge_config(DEFAULT_CONFIG, {})
+    if AETHEROS_CONFIG_PATH.exists():
+        config = _merge_config(config, _load_yaml_config(AETHEROS_CONFIG_PATH))
+
+    service_config = config.get("service", {})
+    configured_port = int(service_config.get("port", 8042))
+    port = int(os.getenv("AETHEROS_CORE_PORT", str(configured_port)))
+    host = str(service_config.get("host", "0.0.0.0"))
+
+    telemetry_path = Path(
+        os.getenv(
+            "AETHEROS_TELEMETRY_QUEUE",
+            str(config.get("telemetry", {}).get("queue_path", DEFAULT_TELEMETRY_PATH)),
+        )
+    )
+
+    logger = _configure_logging(config.get("logging", {}))
+    server = run_server(host, port, telemetry_path, logger, config)
+
+    def _shutdown(signum: int, frame: Optional[object]) -> None:  # noqa: ARG001
+        logger.info("Received signal %s, shutting down", signum)
+        shutdown_event.set()
+        server.shutdown()
+
+    signal.signal(signal.SIGTERM, _shutdown)
+    signal.signal(signal.SIGINT, _shutdown)
+
+    while not shutdown_event.is_set():
+        time.sleep(0.5)
+
+    server.server_close()
+
+
+if __name__ == "__main__":
+    main()

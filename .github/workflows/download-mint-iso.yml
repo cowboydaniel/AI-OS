@@ -79,4 +79,7 @@ jobs:
 
       - name: Clean up downloaded ISO
         run: |
-          rm -rf "${ISO_DIR}"
+          # Some extracted files (e.g., memtest binaries) may be marked read-only, so
+          # relax permissions before removal and use sudo to guarantee cleanup.
+          sudo chmod -R u+w "${ISO_DIR}" || true
+          sudo rm -rf "${ISO_DIR}"

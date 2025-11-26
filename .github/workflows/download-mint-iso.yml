@@ -10,6 +10,8 @@ on:
 jobs:
   download-and-upload:
     runs-on: ubuntu-22.04
+    permissions:
+      contents: write
     env:
       VERSION: "21.3"
       EDITION: "cinnamon"
@@ -56,12 +58,21 @@ jobs:
         run: |
           7z x "${ISO_FILE}" -o"${ISO_DIR}/extracted"
 
-      - name: Upload ISO and extracted contents
+      - name: Commit and push ISO updates
         if: steps.restore.outputs.cache-hit != 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: linuxmint-${{ env.VERSION }}-${{ env.EDITION }}
-          path: |
-            ${{ env.ISO_FILE }}
-            ${{ env.ISO_DIR }}/extracted
-          retention-days: 7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git lfs install
+
+          git add "${ISO_FILE}" "${ISO_DIR}/extracted"
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git commit -m "chore: update Linux Mint ISO ${{ env.VERSION }} ${{ env.EDITION }}"
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" "HEAD:${{ github.ref_name }}"

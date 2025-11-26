@@ -64,8 +64,8 @@
 - [x] Document CI/CD workflows for contributors
 
 ## Phase 10: Release Readiness
-- [ ] Finalize documentation and release notes
-- [ ] Define support/update cadence
-- [ ] Validate installer on target platforms
-- [ ] Prepare signing keys and distribution mirrors
-- [ ] Announce availability and onboarding instructions
+- [x] Finalize documentation and release notes
+- [x] Define support/update cadence
+- [x] Validate installer on target platforms
+- [x] Prepare signing keys and distribution mirrors
+- [x] Announce availability and onboarding instructions

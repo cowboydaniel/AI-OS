@@ -66,27 +66,19 @@ jobs:
             --iso "${OUTPUT_ISO}" \
             --manifest "${CHECKSUMS}"
 
-      - name: Upload release assets
-        uses: softprops/action-gh-release@v2
+      - name: Upload ISO and checksums
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: ${{ env.RELEASE_TAG }}
-          name: ${{ env.RELEASE_NAME }}
-          body: |
-            Automated AetherOS remaster built from Linux Mint ${{ env.VERSION }} ${{ env.EDITION }}.
-            Includes bundled AetherOS payload, branding hooks, and installer defaults.
-
-            Assets:
-            - ${{ env.OUTPUT_ISO }}
-            - ${{ env.CHECKSUMS }}
-          files: |
+          name: ${{ env.RELEASE_TAG }}
+          path: |
             ${{ env.OUTPUT_ISO }}
             ${{ env.CHECKSUMS }}
-          draft: false
-          prerelease: false
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Summarize release
         run: |
-          echo "## Release created" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Tag: ${RELEASE_TAG}" >> "$GITHUB_STEP_SUMMARY"
+          echo "## Build artifacts" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Artifact name: ${RELEASE_TAG}" >> "$GITHUB_STEP_SUMMARY"
           echo "- ISO: $(basename "${OUTPUT_ISO}")" >> "$GITHUB_STEP_SUMMARY"
           echo "- Checksums: $(basename "${CHECKSUMS}")" >> "$GITHUB_STEP_SUMMARY"
